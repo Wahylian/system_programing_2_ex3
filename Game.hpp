@@ -66,6 +66,9 @@ namespace coup{
             // prints the actions available to the current player
             void printValidActions() const;
 
+            // gets the vector of valid actions for the current player
+            vector<string> validActions() const;
+
             // returns all players in the game with the provided role, 
             // except for the current player
             vector<Player*> allOfRole(const string &role) const;

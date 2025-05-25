@@ -293,7 +293,14 @@ namespace coup{
             return false;
 
         // check if the current player can coup the target player
-        return this->_currentPlayer->canCoup(*target);
+        if(this->_currentPlayer->canCoup(*target)){
+            // if the current player can coup the target player, set their last action to "coup"
+            // since it might be getting undone later
+            this->_currentPlayer->_lastAction = "coup";
+            
+            return true;
+        }
+        return false; // if the current player cannot coup the target player, return false
     }
 
     void Game::printValidActions() const{
@@ -305,6 +312,11 @@ namespace coup{
         for(const string &action : validActions){
             cout << action << endl;
         }
+    }
+
+    vector<string> Game::validActions() const{
+        // returns the valid actions for the current player
+        return this->_currentPlayer->getValidActions();
     }
 
     int Game::currentPlayerIndex() const{
