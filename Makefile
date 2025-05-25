@@ -25,6 +25,7 @@ MAIN_OBJ = main.o $(GAME_OBJ)
 # object files for the GUI
 GUI_OBJ = gui.o $(GAME_OBJ)
 
+
 # valgrind flags, taken from course site, folder 02-classes-constructors-destructors: the makefile in the valgrind folder
 VALGRIND_FLAGS=-v --leak-check=full --show-leak-kinds=all --error-exitcode=99 
 
@@ -52,5 +53,6 @@ valgrind-test: test
 
 clean:
 	rm -f *.o PlayerFolder/*.o CustomExceptions/*.o Tests/*.o Main test gui
+
 
 .PHONY: clean 
