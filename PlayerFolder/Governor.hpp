@@ -13,7 +13,7 @@ namespace coup{
             void tax();
 
             // the governor can undo another player's tax action
-            void undoTax(Player &other);
+            void undoTax(Player &other) const;
         
         protected:
             // to avoid the class being abstract

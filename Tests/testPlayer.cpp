@@ -16,6 +16,30 @@ TEST_CASE("Test Player Basic Functionality") {
     SUBCASE("Test Player Coins") {
         CHECK(p.coins() == 0);
     }
+    SUBCASE("Test Player Actions") {
+        CHECK(p.getRemainingActions() == 0);
+    }
+    SUBCASE("Test Player Last Arrested") {
+        CHECK(p.getLastArrested() == nullptr);
+    }
+    SUBCASE("Test Valid Actions"){
+        // the valid actions for the test player are the same as the base player
+        vector<string> excpectedValidActions = {"gather", "tax", "bribe", "arrest", "sanction", "coup", "endTurn"};
+        vector<string> actualValidActions = p.getValidActions();
+        // checks that both vectors have the same size and values
+        CHECK(actualValidActions == excpectedValidActions);
+    }
+    SUBCASE("Test Player Out of Actions") {
+        CHECK(p.isOutOfActions() == true);
+    }
+    SUBCASE("Test Turn Preparation") {
+        // prepares the player for their turn
+        p.prepareForTurn();
+        // check that the player has 1 action left
+        CHECK(p.getRemainingActions() == 1);
+        // check that the player is not out of actions
+        CHECK(!p.isOutOfActions() == true);
+    }
 }
 
 TEST_CASE("Coin Management") {
@@ -190,10 +214,6 @@ TEST_CASE("Test Base Player Functionality"){
                 CHECK(p1.coins() == 1); 
                 // checks that p2 has 4 coins
                 CHECK(p2.coins() == 4); 
-
-
-                
-                
             }
 
             SUBCASE("Test Arrest Player with No Money"){
@@ -426,9 +446,6 @@ TEST_CASE("Test Base Player Functionality"){
             p1.addCoins(7); // add 7 coins to p1
             CHECK(p1.coins() == 7); // should be 7 coins
 
-            // check that p2 does not have a coup block on them
-            CHECK(p2.isCoupBlocked() == false);
-
             // perform the coup
             CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
             // check that p1 has no actions left
@@ -477,22 +494,6 @@ TEST_CASE("Test Base Player Functionality"){
                 // attempt to coup a player
                 CHECK_THROWS(p1.coup(p2)); // should throw an exception
             }
-
-            SUBCASE("Test Coup Blocked"){
-                TestPlayer p1 = TestPlayer("John");
-                TestPlayer p2 = TestPlayer("Doe");
-
-                // give p1 enough coins to perform the coup
-                p1.addCoins(7); // add 7 coins to p1
-                // give p1 an action
-                p1.prepareForTurn();
-
-                // block the coup action
-                p2.blockCoup();
-
-                // attempt to coup a player
-                CHECK_THROWS(p1.coup(p2)); // should throw an exception
-            }
         }
     }
 
@@ -527,21 +528,6 @@ TEST_CASE("Test Base Player Functionality"){
         }
 
         SUBCASE("End Turn with Blocked Actions"){
-            SUBCASE("Coup Blocked"){
-                TestPlayer p = TestPlayer("John");  
-
-                // block coup on p
-                p.blockCoup();
-
-                // check that coup is blocked
-                CHECK(p.isCoupBlocked());
-
-                // end the player's turn
-                CHECK_NOTHROW(p.endTurn());
-
-                // check that coup is not blocked anymore
-                CHECK(!p.isCoupBlocked());
-            }
             SUBCASE("Gather Blocked"){
                 TestPlayer p = TestPlayer("John");  
                 
@@ -618,13 +604,11 @@ TEST_CASE("Test Base Player Functionality"){
                 p.blockTax();
                 p.blockGather();
                 p.blockArrest();
-                p.blockCoup();
 
                 // check that they are all blocked
                 CHECK(p.isTaxBlocked());
                 CHECK(p.isGatherBlocked());
                 CHECK(p.isArrestBlocked());
-                CHECK(p.isCoupBlocked());
 
                 // end the players turn
                 CHECK_NOTHROW(p.endTurn());
@@ -633,10 +617,837 @@ TEST_CASE("Test Base Player Functionality"){
                 CHECK(!p.isTaxBlocked());
                 CHECK(!p.isGatherBlocked());
                 CHECK(!p.isArrestBlocked());
-                CHECK(!p.isCoupBlocked());
             }
         }
     }
 }
-   
 
+TEST_CASE("Test Player Copy Constructor"){
+    TestPlayer p1 = TestPlayer("John");
+    
+    // give p1 an action and some coins
+    p1.prepareForTurn(); 
+    p1.addCoins(5);
+
+    TestPlayer p2 = TestPlayer(p1); // copy constructor
+
+    // check that the players are the same
+    CHECK(p1.getName() == p2.getName());
+    CHECK(p1.getRole() == p2.getRole());
+    CHECK(p1.coins() == p2.coins());
+    CHECK(p1.getRemainingActions() == p2.getRemainingActions());
+
+    // check that the players are not the same object
+    CHECK(&p1 != &p2); // check that they are not the same object
+}
+
+TEST_CASE("Test Player Assignment Operator"){
+    SUBCASE("Assignment to self"){
+        TestPlayer p1 = TestPlayer("John");
+        
+        // give p1 an action and some coins
+        p1.prepareForTurn(); 
+        p1.addCoins(5);
+
+        // save the original address of p1
+        void *originalAddress = &p1;
+
+        // pragmas to allow for self assignment
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wself-assign-overloaded"
+        p1 = p1; // Self-assignment
+        #pragma clang diagnostic pop
+
+        // check that the players are the same
+        CHECK(p1.getName() == "John");
+        CHECK(p1.getRole() == "testPlayer");
+        CHECK(p1.coins() == 5);
+        CHECK(p1.getRemainingActions() == 1);
+
+        // check that the players are the same object
+        CHECK(originalAddress == &p1);
+    }
+
+    SUBCASE("Assignment to different player"){
+        TestPlayer p1 = TestPlayer("John");
+    
+        // give p1 an action and some coins
+        p1.prepareForTurn(); 
+        p1.addCoins(5);
+
+        TestPlayer p2 = TestPlayer("Doe"); // create a new player
+
+        // check that the players are not the same
+        CHECK(p1.getName() != p2.getName());
+        CHECK(p1.getRole() == p2.getRole()); // since they are both test players
+        CHECK(p1.coins() != p2.coins());
+        CHECK(p1.getRemainingActions() != p2.getRemainingActions());
+
+        // assign p1 to p2
+        p2 = p1;
+
+        // check that the players are the same
+        CHECK(p1.getName() == p2.getName());
+        CHECK(p1.getRole() == p2.getRole());
+        CHECK(p1.coins() == p2.coins());
+        CHECK(p1.getRemainingActions() == p2.getRemainingActions());
+
+        // check that the players are not the same object
+        CHECK(&p1 != &p2);
+    }
+}
+
+TEST_CASE("Test Player Valgrind"){
+    // test that the player is not causing any memory leaks
+    SUBCASE("TestPlayer"){
+        // create a player
+        TestPlayer *p = new TestPlayer("John");
+
+        // check that the player is not null
+        CHECK(p != nullptr);
+
+        // delete the player
+        delete p;
+    }
+
+    SUBCASE("TestPlayer Copy Constructor"){
+        // create a player
+        TestPlayer *p1 = new TestPlayer("John");
+
+        // check that the player is not null
+        CHECK(p1 != nullptr);
+
+        // create a copy of the player
+        TestPlayer *p2 = new TestPlayer(*p1);
+
+        // check that the copy is not null
+        CHECK(p2 != nullptr);
+
+        // delete the players
+        delete p1;
+        delete p2;
+    }
+
+    SUBCASE("TestPlayer Assignment Operator"){
+        // create a player
+        TestPlayer *p1 = new TestPlayer("John");
+
+        // check that the player is not null
+        CHECK(p1 != nullptr);
+
+        // create a copy of the player
+        TestPlayer *p2 = new TestPlayer("Doe");
+
+        // check that the copy is not null
+        CHECK(p2 != nullptr);
+
+        // assign p1 to p2
+        *p2 = *p1;
+
+        // check that the players are the same
+        CHECK(p1->getName() == p2->getName());
+        CHECK(p1->getRole() == p2->getRole());
+        CHECK(p1->coins() == p2->coins());
+        CHECK(p1->getRemainingActions() == p2->getRemainingActions());
+
+        // delete the players
+        delete p1;
+        delete p2;
+    }
+
+    SUBCASE("Testing other Player Types"){
+        SUBCASE("Test Spy"){
+            // create a spy
+            Spy *p = new Spy("John");
+
+            // check that the player is not null
+            CHECK(p != nullptr);
+
+            // delete the player
+            delete p;
+        }
+        SUBCASE("Test Merchant"){
+            // create a merchant
+            Merchant *p = new Merchant("John");
+
+            // check that the player is not null
+            CHECK(p != nullptr);
+
+            // delete the player
+            delete p;
+        }
+        SUBCASE("Test Judge"){
+            // create a judge
+            Judge *p = new Judge("John");
+
+            // check that the player is not null
+            CHECK(p != nullptr);
+
+            // delete the player
+            delete p;
+        }
+        SUBCASE("Test Governor"){
+            // create a governor
+            Governor *p = new Governor("John");
+
+            // check that the player is not null
+            CHECK(p != nullptr);
+
+            // delete the player
+            delete p;
+        }
+        SUBCASE("Test General"){
+            // create a general
+            General *p = new General("John");
+
+            // check that the player is not null
+            CHECK(p != nullptr);
+
+            // delete the player
+            delete p;
+        }
+        SUBCASE("Test Baron"){
+            // create a baron
+            Baron *p = new Baron("John");
+            // check that the player is not null
+            CHECK(p != nullptr);    
+            // delete the player
+            delete p;
+        }
+    }
+}
+
+TEST_CASE("Test Player Action Validation"){
+    SUBCASE("Test Valid Actions"){
+        TestPlayer p = TestPlayer("John");
+
+        // get a vector of the supposed valid actions of the player
+        vector<string> validActions = p.getValidActions();
+
+        // should be 7 valid actions since the test player is a base player
+        CHECK(validActions.size() == 7); 
+        CHECK(validActions[0] == "gather");
+        CHECK(validActions[1] == "tax");
+        CHECK(validActions[2] == "bribe");
+        CHECK(validActions[3] == "arrest");
+        CHECK(validActions[4] == "sanction");
+        CHECK(validActions[5] == "coup");
+        CHECK(validActions[6] == "endTurn");
+
+        // check that the player accepts the valid actions
+        for(const string &action : validActions){
+            CHECK(p.isValidAction(action) == true);
+        }
+        // check that the player does not accept actions of other types of players
+        CHECK(!p.isValidAction("invest") == true); // baron special action
+        CHECK(!p.isValidAction("blockCoup") == true); // general special action
+        CHECK(!p.isValidAction("spyOn") ==  true); // spy special action
+        CHECK(!p.isValidAction("blockArrest") == true); // spy special action
+        CHECK(!p.isValidAction("undoBribe") == true); // judge special action
+        CHECK(!p.isValidAction("undoTax") == true); // governor special action
+
+        // check that the player does not accept anything else
+        CHECK(!p.isValidAction("banana") == true);
+        CHECK(!p.isValidAction("randomCoup") == true);
+        CHECK(!p.isValidAction("yatzee") == true);
+        CHECK(!p.isValidAction("test") == true);
+    }
+    SUBCASE("Test Valid Undo Actions"){
+        // since the test player is a base player, it should not have any undo actions
+        TestPlayer p = TestPlayer("John");
+        
+        // get a vector of the supposed valid undo actions of the player
+        vector<string> validUndoActions = p.getValidUndoActions();
+
+        // check that the vector is empty since the test player is a base player
+        CHECK(validUndoActions.size() == 0);
+
+        // check that the player does not accept any undo actions
+        CHECK(!p.isValidUndoAction("undoBribe") == true); // judge special action
+        CHECK(!p.isValidUndoAction("undoTax") == true); // governor special action
+        CHECK(!p.isValidUndoAction("undoCoup") == true); // general special action
+
+        // check that nothing else is accepted as an undo action
+        CHECK(!p.isValidUndoAction("undoBanana") == true);  
+        CHECK(!p.isValidUndoAction("undoRandomCoup") == true);
+        CHECK(!p.isValidUndoAction("yatzeeUndo") == true);
+        CHECK(!p.isValidUndoAction("testUndo") == true);
+    }
+}
+
+TEST_CASE("Test Player Last Arrested Clear"){
+    TestPlayer p1 = TestPlayer("John");
+    TestPlayer p2 = TestPlayer("Doe");
+
+    // give p1 an action
+    p1.prepareForTurn(); // give the player an action
+    CHECK(p1.getRemainingActions() == 1); // should be 1 action left
+
+    // gives p2 some coins for p1 to take
+    p2.addCoins(5); // add 5 coins to p2
+
+    // attempt to arrest a player
+    CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+    // check that p1 has no actions left
+    CHECK(p1.getRemainingActions() == 0);
+    
+    // checks that p1 has 1 coin
+    CHECK(p1.coins() == 1); 
+    // checks that p2 has 4 coins
+    CHECK(p2.coins() == 4); 
+
+    // check that the last arrested player is not null
+    CHECK(p1.getLastArrested() != nullptr);
+
+    // clear the last arrested player
+    p1.clearLastArrested();
+
+    // check that the last arrested player is null
+    CHECK(p1.getLastArrested() == nullptr);
+}
+
+TEST_CASE("Test Against Other Player Roles"){
+    // this is a general test for testing the compatibility of a general player type with a specific player type
+    
+    SUBCASE("Test Player Arrest"){
+        SUBCASE("Arrest Baron"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Baron p2 = Baron("Doe");
+            p2.prepareForTurn(); // give the player an action (for the gathering of coins)
+            // give p2 some coins
+            p2.gather();
+
+            // check that p2 has 1 coin
+            CHECK(p2.coins() == 1);
+
+            // attempt to arrest p2
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 6 coin
+            CHECK(p1.coins() == 6);
+            // checks that p2 has 0 coins
+            CHECK(p2.coins() == 0);
+        }
+        SUBCASE("Arrest General"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            General p2 = General("Doe");
+            p2.prepareForTurn(); // give the player an action (for the gathering of coins)
+            // give p2 some coins
+            p2.gather();
+
+            // check that p2 has 1 coin
+            CHECK(p2.coins() == 1);
+
+            // attempt to arrest p2
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 5 coin
+            CHECK(p1.coins() == 5);
+            // checks that p2 has 1 coins
+            CHECK(p2.coins() == 1);
+            // this is because the general has a passive ability to get refunded for an arrest
+        }
+        SUBCASE("Arrest Governor"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Governor p2 = Governor("Doe");
+            p2.prepareForTurn(); // give the player an action (for the gathering of coins)
+            // give p2 some coins
+            p2.gather();
+
+            // check that p2 has 1 coin
+            CHECK(p2.coins() == 1);
+
+            // attempt to arrest a player
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 6 coin
+            CHECK(p1.coins() == 6);
+            // checks that p2 has 0 coins
+            CHECK(p2.coins() == 0);
+        }
+        SUBCASE("Arrest Judge"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Judge p2 = Judge("Doe");
+            p2.prepareForTurn(); // give the player an action (for the gathering of coins)
+            // give p2 some coins
+            p2.gather();
+
+            // check that p2 has 1 coin
+            CHECK(p2.coins() == 1);
+
+            // attempt to arrest a player
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 6 coin
+            CHECK(p1.coins() == 6);
+            // checks that p2 has 0 coins
+            CHECK(p2.coins() == 0);
+        }
+        SUBCASE("Arrest Merchant"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Merchant p2 = Merchant("Doe");
+            p2.prepareForTurn(); // give the player an action (for the taxation of coins)
+            // give p2 some coins
+            p2.tax();
+
+            // check that p2 has 2 coin
+            CHECK(p2.coins() == 2);
+
+            // attempt to arrest a player
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 5 coin
+            CHECK(p1.coins() == 5);
+            // checks that p2 has 0 coins
+            CHECK(p2.coins() == 0);
+
+            // this is because the merchant has a passive ability to pay 2 coins to the bank 
+            // instead of being arrested
+        }
+        SUBCASE("Arrest Spy"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Spy p2 = Spy("Doe");
+            p2.prepareForTurn(); // give the player an action (for the gather of coins)
+            // give p2 some coins
+            p2.gather();
+
+            // check that p2 has 1 coin
+            CHECK(p2.coins() == 1);
+
+            // attempt to arrest a player
+            CHECK_NOTHROW(p1.arrest(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 5 coin
+            CHECK(p1.coins() == 6);
+            // checks that p2 has 0 coins
+            CHECK(p2.coins() == 0);
+        }
+    }
+
+    SUBCASE("Test Player Sanction"){
+        SUBCASE("Sanction Baron"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Baron p2 = Baron("Doe");
+            // check that p2 has no coins
+            CHECK(p2.coins() == 0);
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+
+            // test that the baron now has 1 coin as refund
+            CHECK(p2.coins() == 1);
+        }
+        SUBCASE("Sanction General"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            General p2 = General("Doe");
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+        }
+        SUBCASE("Sanction Governor"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Governor p2 = Governor("Doe");
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+        }
+        SUBCASE("Sanction Judge"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Judge p2 = Judge("Doe");
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+        }
+        SUBCASE("Sanction Merchant"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Merchant p2 = Merchant("Doe");
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+        }
+        SUBCASE("Sanction Spy"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(5);
+
+            Spy p2 = Spy("Doe");
+            // check that the financial actions in p2 are not blocked
+            CHECK(!p2.isTaxBlocked() == true);
+            CHECK(!p2.isGatherBlocked() == true);
+
+            // attempt to sanction a player
+            CHECK_NOTHROW(p1.sanction(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            
+            // check that the financial actions in p2 are blocked 
+            CHECK(p2.isTaxBlocked() == true);
+            CHECK(p2.isGatherBlocked() == true);
+        }
+    }
+
+    SUBCASE("Test Player Coup"){
+        SUBCASE("Coup Baron"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            Baron p2 = Baron("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+        SUBCASE("Coup General"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            General p2 = General("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+        SUBCASE("Coup Governor"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            Governor p2 = Governor("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+        SUBCASE("Coup Judge"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            Judge p2 = Judge("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+        SUBCASE("Coup Merchant"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            Merchant p2 = Merchant("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+        SUBCASE("Coup Spy"){
+            TestPlayer p1 = TestPlayer("John");
+            // give p1 an action
+            p1.prepareForTurn(); 
+            // give p1 some coins
+            p1.addCoins(7);
+
+            Spy p2 = Spy("Doe");
+
+            // attempt to coup a player
+            CHECK_NOTHROW(p1.coup(p2)); // should not throw an exception
+
+            // check that p1 has no actions left
+            CHECK(p1.getRemainingActions() == 0);
+            // checks that p1 has 0 coins
+            CHECK(p1.coins() == 0);
+        }
+    }
+
+    SUBCASE("Test Player Assignment to an Incorrect Role"){
+        SUBCASE("Assignment to TestPlayer"){
+            SUBCASE("Baron to TestPlayer"){
+                // creates a pointer to a baron
+                Baron b = Baron("John");
+                Player *pB = &b;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pB); // should throw an exception
+            }
+            SUBCASE("General to TestPlayer"){
+                // creates a pointer to a general
+                General g = General("John");
+                Player *pG = &g;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pG); // should throw an exception
+            }
+            SUBCASE("Governor to TestPlayer"){
+                // creates a pointer to a governor
+                Governor g = Governor("John");
+                Player *pG = &g;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pG); // should throw an exception  
+            }
+            SUBCASE("Judge to TestPlayer"){
+                // creates a pointer to a judge
+                Judge j = Judge("John");
+                Player *pJ = &j;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pJ); // should throw an exception  
+            }
+            SUBCASE("Merchant to TestPlayer"){
+                // creates a pointer to a merchant
+                Merchant m = Merchant("John");
+                Player *pM = &m;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pM); // should throw an exception
+            }
+            SUBCASE("Spy to TestPlayer"){
+                // creates a pointer to a spy
+                Spy s = Spy("John");
+                Player *pS = &s;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pP = *pS); // should throw an exception
+            }
+        }
+        SUBCASE("Assignment from TestPlayer to an Actual Role"){
+            SUBCASE("TestPlayer to Baron"){
+                // creates a pointer to a baron
+                Baron b = Baron("John");
+                Player *pB = &b;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pB = *pP); // should throw an exception
+            }
+            SUBCASE("TestPlayer to General"){
+                // creates a pointer to a general
+                General g = General("John");
+                Player *pG = &g;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pG = *pP); // should throw an exception
+            }
+            SUBCASE("TestPlayer to Governor"){
+                // creates a pointer to a governor
+                Governor g = Governor("John");
+                Player *pG = &g;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pG = *pP); // should throw an exception  
+            }
+            SUBCASE("TestPlayer to Judge"){
+                // creates a pointer to a judge
+                Judge j = Judge("John");
+                Player *pJ = &j;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pJ = *pP); // should throw an exception  
+            }
+            SUBCASE("TestPlayer to Merchant"){
+                // creates a pointer to a merchant
+                Merchant m = Merchant("John");
+                Player *pM = &m;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pM = *pP); // should throw an exception
+            }
+            SUBCASE("TestPlayer to Spy"){
+                // creates a pointer to a spy
+                Spy s = Spy("John");
+                Player *pS = &s;
+                // creates a pointer to a test player
+                TestPlayer p("Marry");
+                Player *pP = &p;
+                
+                // attempts the assignment
+                CHECK_THROWS(*pS = *pP); // should throw an exception
+            }
+        }
+    }
+}

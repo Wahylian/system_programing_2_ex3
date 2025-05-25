@@ -10,7 +10,7 @@ namespace coup{
             ~Judge();
 
             // the judge can undo the bribe action of another player
-            void undoBribe(Player &other);
+            void undoBribe(Player &other) const;
         
         protected:    
             // to avoid the class being abstract

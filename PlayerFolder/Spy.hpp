@@ -15,7 +15,7 @@ namespace coup{
 
             // the spy can block the arrest action of another player
             // this action costs nothing and doesn't take a turn
-            void blockOtherArrest(Player &other);
+            void blockArrest(Player &other);
 
         protected:
             // to avoid the class being abstract

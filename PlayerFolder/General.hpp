@@ -9,8 +9,8 @@ namespace coup{
             // destructor
             ~General();
 
-            // the general can pay 5 coins to block a coup action against a player (including themselves).
-            void blockCoupAttempt(Player &other);
+            // the general can pay 5 coins to undo the performance of the coup action against a player (including themselves).
+            void undoCoup(Player &performer);
 
         protected:    
             // to avoid the class being abstract
