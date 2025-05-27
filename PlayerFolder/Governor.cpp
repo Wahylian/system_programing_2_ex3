@@ -6,15 +6,14 @@ namespace coup{
 
     Governor::~Governor() {
         // nothing to do here
-        std::cout<< "Governor " << this->name << " destroyed" << std::endl;
     }
 
     void Governor::tax(){
         int taxAmount = 3; // the amount of coins the governor can tax
 
         // check if the player has enough actions left
-        if(this->remainingActions == 0)
-            throw out_of_actions_exception(this->name);
+        if(this->_remainingActions == 0)
+            throw out_of_actions_exception(this->_name);
 
         // check if the tax action is blocked
         if(this->isTaxBlocked())
@@ -22,20 +21,25 @@ namespace coup{
 
         this->addCoins(taxAmount); // increase the coin count by 3
 
-        this->remainingActions--; // decrease the actions left by 1
+        this->_remainingActions--; // decrease the actions left by 1
+
+        this->_lastAction = "tax"; // set the last action to tax
     }
 
-    void Governor::undoTax(Player &other){
+    void Governor::undoTax(Player &other) const{
         // checks if other is this player
         if(this == &other)
-            throw illegal_action_on_self_exception("Undo Tax");
+            throw undo_self_action_exception("tax");
 
-        // if other is a governor, removes 3 coins from them
-        if(other.getRole() == "Governor"){
-            other.removeCoins(3);
-        } else {
-            // if other is not a governor, removes 2 coins from them
-            other.removeCoins(2);
-        }
+        int taxAmount = 2; // the amount of coins to remove from other
+        if(other.getRole() == "Governor")
+            taxAmount = 3; // if other is a governor, remove 3 coins instead of 2
+
+        // check if the other player's last action was a tax
+        if(other.getLastAction() != "tax")
+            throw undo_wrong_action_exception(other.getName(), "tax", other.getLastAction());
+        
+        // remove the coins from the other player
+        other.removeCoins(taxAmount);
     }
 }

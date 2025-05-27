@@ -1,6 +1,12 @@
 #pragma once
 #include "doctest.h"
 #include "../PlayerFolder/Player.hpp"
+#include "../PlayerFolder/Spy.hpp"
+#include "../PlayerFolder/Merchant.hpp"
+#include "../PlayerFolder/Judge.hpp"
+#include "../PlayerFolder/Governor.hpp"
+#include "../PlayerFolder/General.hpp"
+#include "../PlayerFolder/Baron.hpp"
 
 using namespace coup;
 
@@ -11,10 +17,10 @@ class TestPlayer : public Player {
         // allows access to the functions through the test class
         using Player::addCoins;
         using Player::removeCoins;
-        using Player::blockCoup;
         using Player::blockTax;
         using Player::blockGather;
         using Player::blockArrest;
+        using Player::clearLastArrested;
 
         TestPlayer(const string &name) : Player(name, "testPlayer")
         { 
@@ -23,7 +29,6 @@ class TestPlayer : public Player {
 
         ~TestPlayer() {
             // nothing to do here
-            std::cout<< "Test Player " << this->name << " destroyed" << std::endl;
         }      
     protected:
         // to avoid the class being abstract

@@ -6,14 +6,13 @@ namespace coup{
 
     Merchant::~Merchant() {
         // nothing to do here
-        std::cout<< "Merchant " << this->name << " destroyed" << std::endl;
     }
 
     void Merchant::prepareForTurn(){
         // checks how many coins this player has
         if(this->coins() >= 3)
-            this->coin++;
+            this->_coins++;
         // gives this player an action
-        this->remainingActions++;
+        this->_remainingActions++;
     }
 }
