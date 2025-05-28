@@ -19,18 +19,12 @@ TEST_OBJ = Tests/testFile.o Tests/testPlayer.o Tests/testBaron.o Tests/testGener
 			Tests/testGovernor.o Tests/testJudge.o Tests/testMerchant.o Tests/testSpy.o \
 			Tests/testGame.o
 
-# object files for the main function
-MAIN_OBJ = main.o $(GAME_OBJ)
 
 # object files for the GUI
 GUI_OBJ = gui.o $(GAME_OBJ)
 
 # valgrind flags, taken from course site, folder 02-classes-constructors-destructors: the makefile in the valgrind folder
 VALGRIND_FLAGS=-v --leak-check=full --show-leak-kinds=all --error-exitcode=99 
-
-# creates the main executable
-Main: $(MAIN_OBJ)
-	$(CXX) $(CXXFLAGS)  -o Main $(MAIN_OBJ) 
 
 # compile the gui file with the wxWidgets flags
 gui.o: gui.cpp
@@ -40,6 +34,10 @@ gui.o: gui.cpp
 %.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# creates the main executable (gui)
+Main: $(GUI_OBJ)
+	$(CXX) $(CXXFLAGS) $(WX_CXXFLAGS) -o Main $(GUI_OBJ) $(WX_LIBS)
+
 valgrind: Main
 	valgrind $(VALGRIND_FLAGS) ./Main
 
@@ -47,19 +45,11 @@ valgrind: Main
 test: $(TEST_OBJ) $(GAME_OBJ)
 	$(CXX) $(CXXFLAGS) -o test $(TEST_OBJ) $(GAME_OBJ) 
 
-# creates the gui executable
-gui: $(GUI_OBJ)
-	$(CXX) $(CXXFLAGS) $(WX_CXXFLAGS) -o gui $(GUI_OBJ) $(WX_LIBS)
-
-# runs the gui with valgrind
-valgrind-gui: gui
-	valgrind $(VALGRIND_FLAGS) ./gui
-
 # checks for memory leaks during the tests
 valgrind-test: test
 	valgrind $(VALGRIND_FLAGS) ./test
 
 clean:
-	rm -f *.o PlayerFolder/*.o CustomExceptions/*.o Tests/*.o Main test gui
+	rm -f *.o PlayerFolder/*.o CustomExceptions/*.o Tests/*.o Main test 
 
 .PHONY: clean 
