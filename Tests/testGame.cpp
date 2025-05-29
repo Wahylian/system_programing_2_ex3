@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "testGame.hpp"
 
 TEST_CASE("Test Game Initialization"){

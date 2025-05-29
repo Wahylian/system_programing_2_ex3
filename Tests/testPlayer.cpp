@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "testPlayer.hpp"
 // since test player is just a wrapper of the actual player class it allows to test the player class on it
 // and the result should be the same as with player but with the protected methods now accessible

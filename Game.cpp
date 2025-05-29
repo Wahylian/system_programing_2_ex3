@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Game.hpp"
 
 namespace coup{

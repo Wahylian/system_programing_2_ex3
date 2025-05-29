@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Merchant.hpp"
 namespace coup{
     Merchant::Merchant(const string &name): Player(name, "Merchant") {

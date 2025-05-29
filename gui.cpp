@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "gui.hpp"
 #include <wx/textdlg.h>
 #include <vector>
@@ -5,11 +6,13 @@
 
 class GamePanel : public wxPanel {
 public:
+    // creates the main user interface for the game
     GamePanel(wxWindow* parent, const std::vector<std::string>& playerNames)
         : wxPanel(parent), game(playerNames)
     {
         wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
 
+        // the panel with the player names
         playerList = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr);
         mainSizer->Add(new wxStaticText(this, wxID_ANY, "Players:"), 0, wxALL, 5);
         mainSizer->Add(playerList, 0, wxALL | wxEXPAND, 5);
@@ -17,21 +20,26 @@ public:
         infoText = new wxStaticText(this, wxID_ANY, "");
         mainSizer->Add(infoText, 0, wxALL, 5);
 
+        // the drop down list for the actions the player can perform
         actionChoice = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr);
         mainSizer->Add(new wxStaticText(this, wxID_ANY, "Action:"), 0, wxALL, 5);
         mainSizer->Add(actionChoice, 0, wxALL | wxEXPAND, 5);
 
+        // the drop down list for the target player (if needed)
         targetChoice = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr);
         mainSizer->Add(new wxStaticText(this, wxID_ANY, "Target (if needed):"), 0, wxALL, 5);
         mainSizer->Add(targetChoice, 0, wxALL | wxEXPAND, 5);
 
+        // the button to perform the action
         wxButton* doActionBtn = new wxButton(this, wxID_ANY, "Do Action");
         mainSizer->Add(doActionBtn, 0, wxALL, 5);
 
         SetSizer(mainSizer);
 
+        // binds the button to the OnDoAction method
         doActionBtn->Bind(wxEVT_BUTTON, &GamePanel::OnDoAction, this);
 
+        // updates the UI to reflect the current game state
         UpdateUI();
     }
 
@@ -43,17 +51,20 @@ private:
     wxChoice* targetChoice;
 
     void UpdateUI() {
+        // clears the player list and fills it with the current players
         playerList->Clear();
         auto names = game.players();
         for (const auto& name : names)
             playerList->Append(name);
 
+        // adds the info of the current player to the info text
         auto info = game.info();
         wxString infoStr;
         infoStr << "Name: " << info[0] << "\nRole: " << info[1]
                 << "\nCoins: " << info[2] << "\nActions left: " << info[3];
         infoText->SetLabel(infoStr);
 
+        // clear their actions and target choices
         actionChoice->Clear();
         auto actions = game.validActions();
         for (const auto& act : actions)
@@ -253,8 +264,10 @@ bool MyApp::OnInit() {
 
 MyFrame::MyFrame(const std::vector<std::string>& playerNames)
     : wxFrame(NULL, wxID_ANY, "Coup Game") {
+    // limits the size of the frame to a set size
     SetMinSize(wxSize(350, 550));
     SetMaxSize(wxSize(350, 550));
+    // creates the game panel with the player names
     new GamePanel(this, playerNames);
 }
 

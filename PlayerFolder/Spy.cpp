@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Spy.hpp"
 namespace coup{
     Spy::Spy(const string &name): Player(name, "Spy") {

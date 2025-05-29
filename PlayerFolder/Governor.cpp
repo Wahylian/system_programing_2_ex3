@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Governor.hpp"
 namespace coup{
     Governor::Governor(const string &name): Player(name, "Governor") {

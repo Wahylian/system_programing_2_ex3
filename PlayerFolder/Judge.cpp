@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Judge.hpp"
 namespace coup{
     Judge::Judge(const string &name): Player(name, "Judge") {

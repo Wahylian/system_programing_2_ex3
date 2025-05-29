@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "testMerchant.hpp"
 
 TEST_CASE("Test Merchant Construction"){

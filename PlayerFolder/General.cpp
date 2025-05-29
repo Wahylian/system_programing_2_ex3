@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "General.hpp"
 namespace coup{
     General::General(const string &name): Player(name, "General") {

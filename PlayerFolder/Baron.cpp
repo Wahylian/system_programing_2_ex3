@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Baron.hpp"
 namespace coup{
     Baron::Baron(const string &name): Player(name, "Baron") {

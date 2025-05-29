@@ -1,3 +1,5 @@
+// rido1607@gmail.com
+#pragma once
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
     #include <wx/wx.h>

@@ -1,3 +1,4 @@
+// rido1607@gmail.com
 #include "Player.hpp"
 
 namespace coup{
