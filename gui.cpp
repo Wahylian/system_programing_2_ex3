@@ -143,8 +143,15 @@ private:
                     CloseParent(); // close the game window
                 }
                 catch (const game_not_over_exception&) {
-                    // if the game is not over, continue to the next turn
-                    wxMessageBox("The turn has ended, it's now " + game.turn() + "'s turn.");
+                    // check if action was "coup" and the game is not over
+                    if(action == "coup") {
+                        wxMessageBox("The coup was successful");
+                    }
+                    else{
+                        // if the game is not over, continue to the next turn
+                        wxMessageBox("The turn has ended, it's now " + game.turn() + "'s turn.");
+                    }
+
                     UpdateUI(); // update the UI
                 }
                 return; // exit the function
@@ -221,8 +228,13 @@ bool MyApp::OnInit() {
     if (numDialog.ShowModal() != wxID_OK)
         return false;
     numDialog.GetValue().ToLong(&numPlayers);
-    if (numPlayers < 2) numPlayers = 2;
-    if (numPlayers > 6) numPlayers = 6;
+    // in case the number of players is not valid
+    while(numPlayers < 2 || numPlayers > 6) {
+        wxMessageBox("Please enter a valid number of players (2-6).", "Invalid Input", wxOK | wxICON_ERROR);
+        if (numDialog.ShowModal() != wxID_OK)
+            return false;
+        numDialog.GetValue().ToLong(&numPlayers);
+    }
 
     // Ask for each player's name
     std::vector<std::string> playerNames;
@@ -240,9 +252,9 @@ bool MyApp::OnInit() {
 }
 
 MyFrame::MyFrame(const std::vector<std::string>& playerNames)
-    : wxFrame(NULL, wxID_ANY, "Coup Game GUI") {
-    SetMinSize(wxSize(350, 450));
-    SetMaxSize(wxSize(350, 450));
+    : wxFrame(NULL, wxID_ANY, "Coup Game") {
+    SetMinSize(wxSize(350, 550));
+    SetMaxSize(wxSize(350, 550));
     new GamePanel(this, playerNames);
 }
 
